@@ -1,19 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-
   <meta charset="UTF-8">
-
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>Kamera Absensi Wajah</title>
 
-  <!-- FACE API -->
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
 
   <style>
-
     * {
       box-sizing: border-box;
     }
@@ -37,10 +32,6 @@
       flex-direction: column;
     }
 
-    /* =========================
-       HEADER
-    ========================= */
-
     .header {
       height: 70px;
       background: #0f766e;
@@ -60,10 +51,6 @@
       margin: 4px 0 0;
       font-size: 13px;
     }
-
-    /* =========================
-       CAMERA
-    ========================= */
 
     .camera-area {
       position: relative;
@@ -86,13 +73,10 @@
       position: absolute;
       left: 0;
       top: 0;
-      transform: scaleX(-1);
+      width: 100%;
+      height: 100%;
       pointer-events: none;
     }
-
-    /* =========================
-       MODE
-    ========================= */
 
     .mode {
       position: absolute;
@@ -105,10 +89,6 @@
       font-weight: bold;
       z-index: 5;
     }
-
-    /* =========================
-       STATUS
-    ========================= */
 
     .status-box {
       position: absolute;
@@ -136,16 +116,11 @@
       font-weight: bold;
     }
 
-    /* =========================
-       LOADING
-    ========================= */
-
     #loading {
       position: absolute;
       inset: 0;
       background: rgba(2,6,23,.96);
       z-index: 20;
-
       display: flex;
       justify-content: center;
       align-items: center;
@@ -155,20 +130,14 @@
     .spinner {
       width: 50px;
       height: 50px;
-
       border: 5px solid rgba(255,255,255,.2);
       border-top-color: white;
-
       border-radius: 50%;
-
-      animation:
-        spin 1s linear infinite;
-
+      animation: spin 1s linear infinite;
       margin-bottom: 20px;
     }
 
     @keyframes spin {
-
       from {
         transform: rotate(0deg);
       }
@@ -176,12 +145,7 @@
       to {
         transform: rotate(360deg);
       }
-
     }
-
-    /* =========================
-       ERROR
-    ========================= */
 
     .error {
       width: 90%;
@@ -191,35 +155,19 @@
       border-radius: 12px;
       text-align: center;
     }
-
   </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-  <!-- HEADER -->
-
   <div class="header">
-
     <div>
-
-      <h1>
-        📷 KAMERA ABSENSI WAJAH
-      </h1>
-
-      <p>
-        SD Negeri 1 Juglangan
-      </p>
-
+      <h1>📷 KAMERA ABSENSI WAJAH</h1>
+      <p>SD Negeri 1 Juglangan</p>
     </div>
-
   </div>
-
-
-  <!-- CAMERA AREA -->
 
   <div class="camera-area">
 
@@ -230,24 +178,12 @@
       playsinline>
     </video>
 
-    <canvas
-      id="canvas">
-    </canvas>
-
-
-    <!-- MODE -->
+    <canvas id="canvas"></canvas>
 
     <div class="mode">
-
       MODE:
-      <span id="modeText">
-        MASUK
-      </span>
-
+      <span id="modeText">MASUK</span>
     </div>
-
-
-    <!-- STATUS -->
 
     <div class="status-box">
 
@@ -258,9 +194,6 @@
       <div id="person"></div>
 
     </div>
-
-
-    <!-- LOADING -->
 
     <div id="loading">
 
@@ -284,39 +217,25 @@
 ===================================================== */
 
 const video =
-  document.getElementById(
-    'video'
-  );
+  document.getElementById('video');
 
 const canvas =
-  document.getElementById(
-    'canvas'
-  );
+  document.getElementById('canvas');
 
 const statusElement =
-  document.getElementById(
-    'status'
-  );
+  document.getElementById('status');
 
 const personElement =
-  document.getElementById(
-    'person'
-  );
+  document.getElementById('person');
 
 const loadingElement =
-  document.getElementById(
-    'loading'
-  );
+  document.getElementById('loading');
 
 const loadingText =
-  document.getElementById(
-    'loadingText'
-  );
+  document.getElementById('loadingText');
 
 const modeText =
-  document.getElementById(
-    'modeText'
-  );
+  document.getElementById('modeText');
 
 
 /* =====================================================
@@ -339,19 +258,7 @@ let registerMode = false;
 
 let currentMode = 'Masuk';
 
-
-/*
- * Descriptor wajah terakhir.
- *
- * Ini yang membuat REKAM WAJAH lebih cepat.
- */
-
 let latestDetection = null;
-
-
-/*
- * Pencegah absensi ganda.
- */
 
 let lastAttendanceId = null;
 
@@ -365,43 +272,20 @@ let lastAttendanceTime = 0;
 const MODEL_URL =
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
 
+const MATCH_THRESHOLD = 0.48;
 
-/*
- * Semakin kecil threshold,
- * semakin ketat pencocokannya.
- */
+const ATTENDANCE_COOLDOWN = 10000;
 
-const MATCH_THRESHOLD =
-  0.48;
-
-
-/*
- * Jeda agar siswa tidak langsung
- * diabsen berulang.
- */
-
-const ATTENDANCE_COOLDOWN =
-  10000;
-
-
-/*
- * Interval deteksi.
- */
-
-const DETECTION_INTERVAL =
-  180;
+const DETECTION_INTERVAL = 180;
 
 
 /* =====================================================
    STATUS
 ===================================================== */
 
-function setStatus(
-  text
-) {
+function setStatus(text) {
 
-  statusElement.innerText =
-    text;
+  statusElement.innerText = text;
 
 }
 
@@ -417,16 +301,11 @@ function getParams() {
       window.location.search
     );
 
-
   currentMode =
-    params.get('mode') ||
-    'Masuk';
-
+    params.get('mode') || 'Masuk';
 
   registerMode =
-    params.get('register') ===
-    '1';
-
+    params.get('register') === '1';
 
   if (registerMode) {
 
@@ -454,42 +333,28 @@ async function loadModels() {
     loadingText.innerText =
       'Memuat deteksi wajah...';
 
-
     await faceapi
       .nets
       .tinyFaceDetector
-      .loadFromUri(
-        MODEL_URL
-      );
-
+      .loadFromUri(MODEL_URL);
 
     loadingText.innerText =
       'Memuat landmark wajah...';
 
-
     await faceapi
       .nets
       .faceLandmark68Net
-      .loadFromUri(
-        MODEL_URL
-      );
-
+      .loadFromUri(MODEL_URL);
 
     loadingText.innerText =
       'Memuat pengenalan wajah...';
 
-
     await faceapi
       .nets
       .faceRecognitionNet
-      .loadFromUri(
-        MODEL_URL
-      );
+      .loadFromUri(MODEL_URL);
 
-
-    modelsLoaded =
-      true;
-
+    modelsLoaded = true;
 
     console.log(
       'FACE API: MODEL SIAP'
@@ -497,16 +362,12 @@ async function loadModels() {
 
   } catch (error) {
 
-    console.error(
-      error
-    );
-
+    console.error(error);
 
     showError(
       'Model wajah gagal dimuat.<br><br>' +
       error.message
     );
-
 
     throw error;
 
@@ -526,12 +387,6 @@ async function startCamera() {
     setStatus(
       'Meminta izin kamera...'
     );
-
-
-    /*
-     * 640 × 480 jauh lebih ringan
-     * daripada 1280 × 720.
-     */
 
     stream =
       await navigator
@@ -607,21 +462,13 @@ async function startCamera() {
 
   } catch (error) {
 
-    console.error(
-      error
-    );
-
+    console.error(error);
 
     showError(
-
       'Kamera tidak dapat digunakan.<br><br>' +
-
       'Pastikan izin kamera sudah diberikan.<br><br>' +
-
       error.message
-
     );
-
 
     throw error;
 
@@ -647,14 +494,10 @@ function requestStudents() {
   ) {
 
     window.opener.postMessage(
-
       {
-        type:
-          'REQUEST_STUDENTS'
+        type: 'REQUEST_STUDENTS'
       },
-
       '*'
-
     );
 
   } else {
@@ -680,19 +523,14 @@ window.addEventListener(
       event.data || {};
 
 
-    /* -----------------------------------------------
-       DATA SISWA
-    ----------------------------------------------- */
+    /* DATA SISWA */
 
     if (
-      data.type ===
-      'STUDENTS'
+      data.type === 'STUDENTS'
     ) {
 
       students =
-        Array.isArray(
-          data.students
-        )
+        Array.isArray(data.students)
           ? data.students
           : [];
 
@@ -725,23 +563,18 @@ window.addEventListener(
     }
 
 
-    /* -----------------------------------------------
-       HASIL ABSENSI / REGISTRASI
-    ----------------------------------------------- */
+    /* HASIL */
 
     if (
-      data.type ===
-      'RESULT'
+      data.type === 'RESULT'
     ) {
 
       const result =
-        data.result ||
-        {};
+        data.result || {};
 
 
       if (
-        result.success ===
-        false
+        result.success === false
       ) {
 
         setStatus(
@@ -768,9 +601,7 @@ window.addEventListener(
             personElement.innerText =
               '';
 
-            if (
-              running
-            ) {
+            if (running) {
 
               setStatus(
                 registerMode
@@ -789,13 +620,10 @@ window.addEventListener(
     }
 
 
-    /* -----------------------------------------------
-       STOP
-    ----------------------------------------------- */
+    /* STOP */
 
     if (
-      data.type ===
-      'STOP'
+      data.type === 'STOP'
     ) {
 
       stopCamera();
@@ -803,13 +631,10 @@ window.addEventListener(
     }
 
 
-    /* -----------------------------------------------
-       CAPTURE
-    ----------------------------------------------- */
+    /* CAPTURE */
 
     if (
-      data.type ===
-      'CAPTURE'
+      data.type === 'CAPTURE'
     ) {
 
       await captureFace();
@@ -826,8 +651,7 @@ window.addEventListener(
 
 function buildFaceMatcher() {
 
-  const labeledDescriptors =
-    [];
+  const labeledDescriptors = [];
 
 
   students.forEach(
@@ -848,30 +672,19 @@ function buildFaceMatcher() {
           student.descriptor;
 
 
-        /*
-         * Jika descriptor dari Sheet
-         * berbentuk JSON string.
-         */
-
         if (
-          typeof descriptor ===
-          'string'
+          typeof descriptor === 'string'
         ) {
 
           descriptor =
-            JSON.parse(
-              descriptor
-            );
+            JSON.parse(descriptor);
 
         }
 
 
         if (
-          Array.isArray(
-            descriptor
-          ) &&
-          descriptor.length ===
-          128
+          Array.isArray(descriptor) &&
+          descriptor.length === 128
         ) {
 
           const floatDescriptor =
@@ -885,9 +698,7 @@ function buildFaceMatcher() {
             new faceapi
               .LabeledFaceDescriptors(
 
-                String(
-                  student.id
-                ),
+                String(student.id),
 
                 [
                   floatDescriptor
@@ -914,17 +725,13 @@ function buildFaceMatcher() {
 
 
   if (
-    labeledDescriptors.length >
-    0
+    labeledDescriptors.length > 0
   ) {
 
     faceMatcher =
       new faceapi.FaceMatcher(
-
         labeledDescriptors,
-
         MATCH_THRESHOLD
-
       );
 
 
@@ -935,9 +742,7 @@ function buildFaceMatcher() {
 
   } else {
 
-    faceMatcher =
-      null;
-
+    faceMatcher = null;
 
     console.log(
       'BELUM ADA DESCRIPTOR'
@@ -965,8 +770,7 @@ async function detectFace() {
   }
 
 
-  detecting =
-    true;
+  detecting = true;
 
 
   try {
@@ -981,15 +785,9 @@ async function detectFace() {
           new faceapi
             .TinyFaceDetectorOptions({
 
-              /*
-               * 160 = lebih cepat.
-               */
+              inputSize: 160,
 
-              inputSize:
-                160,
-
-              scoreThreshold:
-                0.45
+              scoreThreshold: 0.45
 
             })
 
@@ -1000,15 +798,11 @@ async function detectFace() {
         .withFaceDescriptor();
 
 
-    /* ===============================================
-       TIDAK ADA WAJAH
-    =============================================== */
+    /* TIDAK ADA WAJAH */
 
     if (!detection) {
 
-      latestDetection =
-        null;
-
+      latestDetection = null;
 
       drawEmptyBox();
 
@@ -1024,13 +818,10 @@ async function detectFace() {
       );
 
 
-      personElement.innerText =
-        '';
+      personElement.innerText = '';
 
 
-      detecting =
-        false;
-
+      detecting = false;
 
       scheduleDetection();
 
@@ -1039,30 +830,22 @@ async function detectFace() {
     }
 
 
-    /* ===============================================
-       SIMPAN DETEKSI TERAKHIR
-    =============================================== */
+    /* SIMPAN DETEKSI TERAKHIR */
 
     latestDetection =
       detection;
 
 
-    /* ===============================================
-       GAMBAR KOTAK
-    =============================================== */
+    /* GAMBAR KOTAK */
 
     drawFaceBox(
       detection
     );
 
 
-    /* ===============================================
-       REGISTRASI
-    =============================================== */
+    /* MODE REGISTRASI */
 
-    if (
-      registerMode
-    ) {
+    if (registerMode) {
 
       setStatus(
         '✅ Wajah terdeteksi. Klik REKAM WAJAH.'
@@ -1073,9 +856,7 @@ async function detectFace() {
         'Wajah siap direkam';
 
 
-      detecting =
-        false;
-
+      detecting = false;
 
       scheduleDetection();
 
@@ -1084,9 +865,7 @@ async function detectFace() {
     }
 
 
-    /* ===============================================
-       ABSENSI
-    =============================================== */
+    /* MODE ABSENSI */
 
     if (!faceMatcher) {
 
@@ -1095,12 +874,9 @@ async function detectFace() {
       );
 
 
-      personElement.innerText =
-        '';
+      personElement.innerText = '';
 
-
-      detecting =
-        false;
+      detecting = false;
 
 
       setTimeout(
@@ -1112,21 +888,16 @@ async function detectFace() {
         1000
       );
 
-
       return;
 
     }
 
 
-    /* ===============================================
-       COCOKKAN WAJAH
-    =============================================== */
+    /* COCOKKAN WAJAH */
 
     const bestMatch =
       faceMatcher.findBestMatch(
-
         detection.descriptor
-
       );
 
 
@@ -1137,13 +908,10 @@ async function detectFace() {
     );
 
 
-    /* ===============================================
-       TIDAK DIKENALI
-    =============================================== */
+    /* TIDAK DIKENALI */
 
     if (
-      bestMatch.label ===
-      'unknown'
+      bestMatch.label === 'unknown'
     ) {
 
       setStatus(
@@ -1155,8 +923,7 @@ async function detectFace() {
         'Tidak dikenali';
 
 
-      detecting =
-        false;
+      detecting = false;
 
 
       setTimeout(
@@ -1174,31 +941,22 @@ async function detectFace() {
     }
 
 
-    /* ===============================================
-       CARI DATA SISWA
-    =============================================== */
+    /* CARI DATA SISWA */
 
     const student =
       students.find(
-
         function(item) {
 
-          return String(
-            item.id
-          ) ===
-          String(
-            bestMatch.label
-          );
+          return String(item.id) ===
+            String(bestMatch.label);
 
         }
-
       );
 
 
     if (!student) {
 
-      detecting =
-        false;
+      detecting = false;
 
       scheduleDetection();
 
@@ -1218,29 +976,22 @@ async function detectFace() {
     );
 
 
-    /* ===============================================
-       CEGAH ABSENSI GANDA
-    =============================================== */
+    /* CEGAH ABSENSI GANDA */
 
     const now =
       Date.now();
 
 
     if (
-
-      lastAttendanceId ===
-      student.id &&
-
+      lastAttendanceId === student.id &&
       (
         now -
         lastAttendanceTime
       ) <
       ATTENDANCE_COOLDOWN
-
     ) {
 
-      detecting =
-        false;
+      detecting = false;
 
 
       setStatus(
@@ -1266,14 +1017,11 @@ async function detectFace() {
     lastAttendanceId =
       student.id;
 
-
     lastAttendanceTime =
       now;
 
 
-    /* ===============================================
-       KIRIM KE INDEX.HTML
-    =============================================== */
+    /* KIRIM KE INDEX */
 
     if (
       window.opener &&
@@ -1281,29 +1029,18 @@ async function detectFace() {
     ) {
 
       window.opener.postMessage(
-
         {
-
-          type:
-            'MATCH',
-
-          id:
-            student.id,
-
-          mode:
-            currentMode
-
+          type: 'MATCH',
+          id: student.id,
+          mode: currentMode
         },
-
         '*'
-
       );
 
     }
 
 
-    detecting =
-      false;
+    detecting = false;
 
 
     setTimeout(
@@ -1324,8 +1061,7 @@ async function detectFace() {
     );
 
 
-    detecting =
-      false;
+    detecting = false;
 
 
     setTimeout(
@@ -1343,7 +1079,7 @@ async function detectFace() {
 
 
 /* =====================================================
-   JADWALKAN DETEKSI BERIKUTNYA
+   JADWALKAN DETEKSI
 ===================================================== */
 
 function scheduleDetection() {
@@ -1365,70 +1101,149 @@ function scheduleDetection() {
    GAMBAR KOTAK WAJAH
 ===================================================== */
 
-function drawFaceBox(
-  detection
-) {
-
-  const dims =
-    faceapi.matchDimensions(
-
-      canvas,
-
-      video,
-
-      true
-
-    );
-
-
-  const resized =
-    faceapi.resizeResults(
-
-      detection,
-
-      dims
-
-    );
-
+function drawFaceBox(detection) {
 
   const ctx =
-    canvas.getContext(
-      '2d'
+    canvas.getContext('2d');
+
+  const videoRect =
+    video.getBoundingClientRect();
+
+  const displayWidth =
+    videoRect.width;
+
+  const displayHeight =
+    videoRect.height;
+
+  const videoWidth =
+    video.videoWidth;
+
+  const videoHeight =
+    video.videoHeight;
+
+
+  if (
+    !videoWidth ||
+    !videoHeight
+  ) {
+
+    return;
+
+  }
+
+
+  /*
+   * Karena video menggunakan
+   * object-fit: cover.
+   */
+
+  const scale =
+    Math.max(
+      displayWidth / videoWidth,
+      displayHeight / videoHeight
     );
 
 
+  const renderedWidth =
+    videoWidth * scale;
+
+  const renderedHeight =
+    videoHeight * scale;
+
+
+  const offsetX =
+    (displayWidth -
+      renderedWidth) / 2;
+
+  const offsetY =
+    (displayHeight -
+      renderedHeight) / 2;
+
+
+  /*
+   * Posisi wajah dari Face API.
+   */
+
+  const box =
+    detection.detection.box;
+
+
+  /*
+   * Video mirror.
+   * Posisi X dibalik.
+   */
+
+  const x =
+    renderedWidth -
+    (box.x + box.width) * scale +
+    offsetX;
+
+  const y =
+    box.y * scale +
+    offsetY;
+
+  const width =
+    box.width * scale;
+
+  const height =
+    box.height * scale;
+
+
+  /*
+   * Bersihkan canvas.
+   */
+
   ctx.clearRect(
-
     0,
     0,
-
     canvas.width,
     canvas.height
-
   );
 
 
-  const box =
-    resized.detection.box;
+  /*
+   * Sesuaikan skala canvas
+   * dengan ukuran layar.
+   */
 
+  const scaleX =
+    canvas.width /
+    displayWidth;
+
+  const scaleY =
+    canvas.height /
+    displayHeight;
+
+
+  ctx.save();
+
+
+  ctx.scale(
+    scaleX,
+    scaleY
+  );
+
+
+  /*
+   * Kotak wajah.
+   */
 
   ctx.strokeStyle =
     '#22c55e';
-
 
   ctx.lineWidth =
     4;
 
 
   ctx.strokeRect(
-
-    box.x,
-    box.y,
-
-    box.width,
-    box.height
-
+    x,
+    y,
+    width,
+    height
   );
+
+
+  ctx.restore();
 
 }
 
@@ -1440,19 +1255,14 @@ function drawFaceBox(
 function drawEmptyBox() {
 
   const ctx =
-    canvas.getContext(
-      '2d'
-    );
+    canvas.getContext('2d');
 
 
   ctx.clearRect(
-
     0,
     0,
-
     canvas.width,
     canvas.height
-
   );
 
 }
@@ -1476,14 +1286,11 @@ async function captureFace() {
    * tersedia dari deteksi terakhir.
    */
 
-  if (
-    !latestDetection
-  ) {
+  if (!latestDetection) {
 
     setStatus(
       '❌ Wajah belum terdeteksi.'
     );
-
 
     return;
 
@@ -1499,22 +1306,17 @@ async function captureFace() {
 
     const descriptor =
       Array.from(
-
-        latestDetection
-          .descriptor
-
+        latestDetection.descriptor
       );
 
 
     if (
-      descriptor.length !==
-      128
+      descriptor.length !== 128
     ) {
 
       setStatus(
         'Descriptor wajah tidak valid.'
       );
-
 
       return;
 
@@ -1522,7 +1324,7 @@ async function captureFace() {
 
 
     /*
-     * Kirim langsung ke Index.html
+     * Kirim descriptor ke Index.html.
      */
 
     if (
@@ -1531,26 +1333,17 @@ async function captureFace() {
     ) {
 
       window.opener.postMessage(
-
         {
-
-          type:
-            'REGISTER',
-
-          descriptor:
-            descriptor
-
+          type: 'REGISTER',
+          descriptor: descriptor
         },
-
         '*'
-
       );
 
 
       setStatus(
         '✅ Wajah berhasil direkam. Menyimpan data...'
       );
-
 
     } else {
 
@@ -1563,9 +1356,7 @@ async function captureFace() {
 
   } catch (error) {
 
-    console.error(
-      error
-    );
+    console.error(error);
 
 
     setStatus(
@@ -1584,16 +1375,11 @@ async function captureFace() {
 
 function stopCamera() {
 
-  running =
-    false;
+  running = false;
 
+  detecting = false;
 
-  detecting =
-    false;
-
-
-  latestDetection =
-    null;
+  latestDetection = null;
 
 
   if (stream) {
@@ -1601,26 +1387,22 @@ function stopCamera() {
     stream
       .getTracks()
       .forEach(
-
         function(track) {
 
           track.stop();
 
         }
-
       );
 
 
-    stream =
-      null;
+    stream = null;
 
   }
 
 
   if (video) {
 
-    video.srcObject =
-      null;
+    video.srcObject = null;
 
   }
 
@@ -1633,8 +1415,7 @@ function stopCamera() {
   );
 
 
-  personElement.innerText =
-    '';
+  personElement.innerText = '';
 
 }
 
@@ -1643,9 +1424,7 @@ function stopCamera() {
    ERROR
 ===================================================== */
 
-function showError(
-  message
-) {
+function showError(message) {
 
   loadingElement.innerHTML =
 
@@ -1670,33 +1449,23 @@ async function initialize() {
 
   try {
 
-    /* 1 */
     getParams();
 
-
-    /* 2 */
     await loadModels();
 
-
-    /* 3 */
     await startCamera();
 
 
-    /* 4 */
     loadingElement.style.display =
       'none';
 
 
-    /* 5 */
-    running =
-      true;
+    running = true;
 
 
-    /* 6 */
     requestStudents();
 
 
-    /* 7 */
     setTimeout(
       function() {
 
