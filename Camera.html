@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
+
   <meta charset="UTF-8">
+
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
 
@@ -16,17 +18,21 @@
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      background: #0f172a;
-      color: white;
-      font-family: Arial, Helvetica, sans-serif;
+      padding: 0;
+      width: 100%;
+      height: 100%;
       overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #020617;
+      color: white;
     }
 
     .container {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       display: flex;
       flex-direction: column;
     }
@@ -36,24 +42,23 @@
     ========================= */
 
     .header {
-      height: 75px;
+      height: 70px;
       background: #0f766e;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
       text-align: center;
-      padding: 10px;
       z-index: 10;
     }
 
     .header h1 {
       margin: 0;
-      font-size: 25px;
+      font-size: 23px;
     }
 
     .header p {
       margin: 4px 0 0;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     /* =========================
@@ -63,11 +68,11 @@
     .camera-area {
       position: relative;
       flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       background: #020617;
       overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     video {
@@ -79,9 +84,26 @@
 
     canvas {
       position: absolute;
-      top: 0;
       left: 0;
+      top: 0;
       transform: scaleX(-1);
+      pointer-events: none;
+    }
+
+    /* =========================
+       MODE
+    ========================= */
+
+    .mode {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      padding: 10px 15px;
+      border-radius: 10px;
+      background: rgba(0,0,0,.70);
+      font-size: 14px;
+      font-weight: bold;
+      z-index: 5;
     }
 
     /* =========================
@@ -91,41 +113,26 @@
     .status-box {
       position: absolute;
       left: 50%;
-      bottom: 25px;
+      bottom: 20px;
       transform: translateX(-50%);
-      width: 90%;
-      max-width: 700px;
-      background: rgba(0, 0, 0, 0.75);
+      width: 92%;
+      max-width: 650px;
+      background: rgba(0,0,0,.78);
+      padding: 14px;
       border-radius: 15px;
-      padding: 15px;
       text-align: center;
       z-index: 5;
     }
 
     #status {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: bold;
     }
 
     #person {
-      margin-top: 8px;
-      font-size: 25px;
-      font-weight: bold;
+      margin-top: 7px;
       color: #4ade80;
-    }
-
-    /* =========================
-       MODE
-    ========================= */
-
-    .mode {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: rgba(0,0,0,.75);
-      padding: 12px 18px;
-      border-radius: 10px;
-      z-index: 5;
+      font-size: 23px;
       font-weight: bold;
     }
 
@@ -133,31 +140,43 @@
        LOADING
     ========================= */
 
-    .loading {
+    #loading {
       position: absolute;
       inset: 0;
-      background: rgba(2,6,23,.95);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
+      background: rgba(2,6,23,.96);
       z-index: 20;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
     }
 
     .spinner {
-      width: 55px;
-      height: 55px;
+      width: 50px;
+      height: 50px;
+
       border: 5px solid rgba(255,255,255,.2);
       border-top-color: white;
+
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+
+      animation:
+        spin 1s linear infinite;
+
       margin-bottom: 20px;
     }
 
     @keyframes spin {
+
+      from {
+        transform: rotate(0deg);
+      }
+
       to {
         transform: rotate(360deg);
       }
+
     }
 
     /* =========================
@@ -165,16 +184,16 @@
     ========================= */
 
     .error {
-      background: #7f1d1d;
-      color: white;
-      padding: 15px;
-      border-radius: 10px;
       width: 90%;
       max-width: 600px;
+      background: #7f1d1d;
+      padding: 20px;
+      border-radius: 12px;
       text-align: center;
     }
 
   </style>
+
 </head>
 
 <body>
@@ -200,7 +219,7 @@
   </div>
 
 
-  <!-- CAMERA -->
+  <!-- CAMERA AREA -->
 
   <div class="camera-area">
 
@@ -211,7 +230,9 @@
       playsinline>
     </video>
 
-    <canvas id="canvas"></canvas>
+    <canvas
+      id="canvas">
+    </canvas>
 
 
     <!-- MODE -->
@@ -231,7 +252,7 @@
     <div class="status-box">
 
       <div id="status">
-        Memulai kamera...
+        Menyiapkan kamera...
       </div>
 
       <div id="person"></div>
@@ -241,9 +262,7 @@
 
     <!-- LOADING -->
 
-    <div
-      id="loading"
-      class="loading">
+    <div id="loading">
 
       <div class="spinner"></div>
 
@@ -261,82 +280,134 @@
 <script>
 
 /* =====================================================
-   VARIABEL
+   ELEMENT
 ===================================================== */
 
 const video =
-  document.getElementById('video');
+  document.getElementById(
+    'video'
+  );
 
 const canvas =
-  document.getElementById('canvas');
+  document.getElementById(
+    'canvas'
+  );
 
 const statusElement =
-  document.getElementById('status');
+  document.getElementById(
+    'status'
+  );
 
 const personElement =
-  document.getElementById('person');
+  document.getElementById(
+    'person'
+  );
 
 const loadingElement =
-  document.getElementById('loading');
+  document.getElementById(
+    'loading'
+  );
 
 const loadingText =
-  document.getElementById('loadingText');
+  document.getElementById(
+    'loadingText'
+  );
 
 const modeText =
-  document.getElementById('modeText');
+  document.getElementById(
+    'modeText'
+  );
 
+
+/* =====================================================
+   VARIABEL
+===================================================== */
 
 let stream = null;
-
-let modelsLoaded = false;
-
-let students = [];
 
 let running = false;
 
 let detecting = false;
 
+let modelsLoaded = false;
+
+let students = [];
+
+let faceMatcher = null;
+
 let registerMode = false;
 
 let currentMode = 'Masuk';
+
+
+/*
+ * Descriptor wajah terakhir.
+ *
+ * Ini yang membuat REKAM WAJAH lebih cepat.
+ */
+
+let latestDetection = null;
+
+
+/*
+ * Pencegah absensi ganda.
+ */
 
 let lastAttendanceId = null;
 
 let lastAttendanceTime = 0;
 
-let faceMatcher = null;
-
 
 /* =====================================================
-   PARAMETER
-===================================================== */
-
-const MATCH_THRESHOLD = 0.48;
-
-const ATTENDANCE_COOLDOWN = 10000;
-
-
-/* =====================================================
-   MODEL FACE API
+   KONFIGURASI
 ===================================================== */
 
 const MODEL_URL =
   'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
 
 
+/*
+ * Semakin kecil threshold,
+ * semakin ketat pencocokannya.
+ */
+
+const MATCH_THRESHOLD =
+  0.48;
+
+
+/*
+ * Jeda agar siswa tidak langsung
+ * diabsen berulang.
+ */
+
+const ATTENDANCE_COOLDOWN =
+  10000;
+
+
+/*
+ * Interval deteksi.
+ */
+
+const DETECTION_INTERVAL =
+  180;
+
+
 /* =====================================================
    STATUS
 ===================================================== */
 
-function setStatus(text) {
+function setStatus(
+  text
+) {
 
-  statusElement.innerText = text;
+  statusElement.innerText =
+    text;
 
 }
 
 
 /* =====================================================
-   URL PARAMETER
+   PARAMETER URL
 ===================================================== */
 
 function getParams() {
@@ -346,17 +417,28 @@ function getParams() {
       window.location.search
     );
 
+
   currentMode =
     params.get('mode') ||
     'Masuk';
 
-  registerMode =
-    params.get('register') === '1';
 
-  modeText.innerText =
-    registerMode
-      ? 'REGISTRASI WAJAH'
-      : currentMode.toUpperCase();
+  registerMode =
+    params.get('register') ===
+    '1';
+
+
+  if (registerMode) {
+
+    modeText.innerText =
+      'REGISTRASI WAJAH';
+
+  } else {
+
+    modeText.innerText =
+      currentMode.toUpperCase();
+
+  }
 
 }
 
@@ -370,43 +452,61 @@ async function loadModels() {
   try {
 
     loadingText.innerText =
-      'Memuat model deteksi wajah...';
-
-    await faceapi.nets.tinyFaceDetector.loadFromUri(
-      MODEL_URL
-    );
+      'Memuat deteksi wajah...';
 
 
-    loadingText.innerText =
-      'Memuat model landmark wajah...';
-
-    await faceapi.nets.faceLandmark68Net.loadFromUri(
-      MODEL_URL
-    );
+    await faceapi
+      .nets
+      .tinyFaceDetector
+      .loadFromUri(
+        MODEL_URL
+      );
 
 
     loadingText.innerText =
-      'Memuat model pengenalan wajah...';
-
-    await faceapi.nets.faceRecognitionNet.loadFromUri(
-      MODEL_URL
-    );
+      'Memuat landmark wajah...';
 
 
-    modelsLoaded = true;
+    await faceapi
+      .nets
+      .faceLandmark68Net
+      .loadFromUri(
+        MODEL_URL
+      );
+
+
+    loadingText.innerText =
+      'Memuat pengenalan wajah...';
+
+
+    await faceapi
+      .nets
+      .faceRecognitionNet
+      .loadFromUri(
+        MODEL_URL
+      );
+
+
+    modelsLoaded =
+      true;
+
 
     console.log(
-      'Semua model berhasil dimuat.'
+      'FACE API: MODEL SIAP'
     );
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      error
+    );
+
 
     showError(
       'Model wajah gagal dimuat.<br><br>' +
       error.message
     );
+
 
     throw error;
 
@@ -416,7 +516,7 @@ async function loadModels() {
 
 
 /* =====================================================
-   AKTIFKAN KAMERA
+   START CAMERA
 ===================================================== */
 
 async function startCamera() {
@@ -428,28 +528,40 @@ async function startCamera() {
     );
 
 
+    /*
+     * 640 × 480 jauh lebih ringan
+     * daripada 1280 × 720.
+     */
+
     stream =
-      await navigator.mediaDevices.getUserMedia({
+      await navigator
+        .mediaDevices
+        .getUserMedia({
 
-        video: {
+          video: {
 
-          facingMode: {
-            ideal: 'user'
+            facingMode: {
+              ideal: 'user'
+            },
+
+            width: {
+              ideal: 640
+            },
+
+            height: {
+              ideal: 480
+            },
+
+            frameRate: {
+              ideal: 24,
+              max: 30
+            }
+
           },
 
-          width: {
-            ideal: 1280
-          },
+          audio: false
 
-          height: {
-            ideal: 720
-          }
-
-        },
-
-        audio: false
-
-      });
+        });
 
 
     video.srcObject =
@@ -480,27 +592,36 @@ async function startCamera() {
       video.videoHeight;
 
 
-    setStatus(
-      'Kamera aktif. Silakan hadapkan wajah ke kamera.'
+    console.log(
+      'KAMERA:',
+      video.videoWidth,
+      'x',
+      video.videoHeight
     );
 
 
-    console.log(
-      'Resolusi:',
-      video.videoWidth,
-      video.videoHeight
+    setStatus(
+      'Kamera aktif. Hadapkan wajah ke kamera.'
     );
 
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      error
+    );
+
 
     showError(
+
       'Kamera tidak dapat digunakan.<br><br>' +
-      'Pastikan browser memiliki izin kamera.<br><br>' +
+
+      'Pastikan izin kamera sudah diberikan.<br><br>' +
+
       error.message
+
     );
+
 
     throw error;
 
@@ -510,7 +631,7 @@ async function startCamera() {
 
 
 /* =====================================================
-   MINTA DATA SISWA DARI INDEX
+   REQUEST DATA SISWA
 ===================================================== */
 
 function requestStudents() {
@@ -526,10 +647,14 @@ function requestStudents() {
   ) {
 
     window.opener.postMessage(
+
       {
-        type: 'REQUEST_STUDENTS'
+        type:
+          'REQUEST_STUDENTS'
       },
+
       '*'
+
     );
 
   } else {
@@ -544,7 +669,7 @@ function requestStudents() {
 
 
 /* =====================================================
-   TERIMA DATA DARI INDEX
+   PESAN DARI INDEX.HTML
 ===================================================== */
 
 window.addEventListener(
@@ -565,13 +690,15 @@ window.addEventListener(
     ) {
 
       students =
-        Array.isArray(data.students)
+        Array.isArray(
+          data.students
+        )
           ? data.students
           : [];
 
 
       console.log(
-        'Jumlah siswa:',
+        'DATA SISWA:',
         students.length
       );
 
@@ -579,16 +706,18 @@ window.addEventListener(
       buildFaceMatcher();
 
 
-      if (students.length === 0) {
+      if (
+        students.length === 0
+      ) {
 
         setStatus(
-          'Belum ada data wajah siswa yang terdaftar.'
+          'Belum ada wajah siswa yang terdaftar.'
         );
 
       } else {
 
         setStatus(
-          'Sistem siap. Silakan hadapkan wajah ke kamera.'
+          'Sistem siap. Hadapkan wajah ke kamera.'
         );
 
       }
@@ -597,7 +726,7 @@ window.addEventListener(
 
 
     /* -----------------------------------------------
-       HASIL ABSENSI
+       HASIL ABSENSI / REGISTRASI
     ----------------------------------------------- */
 
     if (
@@ -606,42 +735,53 @@ window.addEventListener(
     ) {
 
       const result =
-        data.result || {};
+        data.result ||
+        {};
 
 
       if (
-        result.success === false
+        result.success ===
+        false
       ) {
 
         setStatus(
           result.message ||
-          'Absensi gagal.'
+          'Proses gagal.'
         );
 
       } else {
 
         setStatus(
-          '✅ ABSENSI BERHASIL'
+          '✅ BERHASIL'
         );
 
 
         personElement.innerText =
           result.name ||
           result.nama ||
-          'Berhasil dicatat';
+          'Berhasil';
 
 
         setTimeout(
           function() {
 
-            personElement.innerText = '';
+            personElement.innerText =
+              '';
 
-            setStatus(
-              'Silakan hadapkan wajah berikutnya.'
-            );
+            if (
+              running
+            ) {
+
+              setStatus(
+                registerMode
+                  ? 'Siap merekam wajah berikutnya.'
+                  : 'Silakan hadapkan wajah berikutnya.'
+              );
+
+            }
 
           },
-          4000
+          3000
         );
 
       }
@@ -664,7 +804,7 @@ window.addEventListener(
 
 
     /* -----------------------------------------------
-       CAPTURE REGISTRASI
+       CAPTURE
     ----------------------------------------------- */
 
     if (
@@ -681,12 +821,13 @@ window.addEventListener(
 
 
 /* =====================================================
-   FACE MATCHER
+   BUILD FACE MATCHER
 ===================================================== */
 
 function buildFaceMatcher() {
 
-  const labeledDescriptors = [];
+  const labeledDescriptors =
+    [];
 
 
   students.forEach(
@@ -695,7 +836,9 @@ function buildFaceMatcher() {
       if (
         !student.descriptor
       ) {
+
         return;
+
       }
 
 
@@ -706,8 +849,8 @@ function buildFaceMatcher() {
 
 
         /*
-         * Descriptor mungkin tersimpan sebagai
-         * JSON string di Google Sheets.
+         * Jika descriptor dari Sheet
+         * berbentuk JSON string.
          */
 
         if (
@@ -716,14 +859,19 @@ function buildFaceMatcher() {
         ) {
 
           descriptor =
-            JSON.parse(descriptor);
+            JSON.parse(
+              descriptor
+            );
 
         }
 
 
         if (
-          Array.isArray(descriptor) &&
-          descriptor.length === 128
+          Array.isArray(
+            descriptor
+          ) &&
+          descriptor.length ===
+          128
         ) {
 
           const floatDescriptor =
@@ -734,12 +882,18 @@ function buildFaceMatcher() {
 
           labeledDescriptors.push(
 
-            new faceapi.LabeledFaceDescriptors(
-              String(student.id),
-              [
-                floatDescriptor
-              ]
-            )
+            new faceapi
+              .LabeledFaceDescriptors(
+
+                String(
+                  student.id
+                ),
+
+                [
+                  floatDescriptor
+                ]
+
+              )
 
           );
 
@@ -749,7 +903,7 @@ function buildFaceMatcher() {
 
         console.error(
           'Descriptor tidak valid:',
-          student,
+          student.id,
           error
         );
 
@@ -760,19 +914,34 @@ function buildFaceMatcher() {
 
 
   if (
-    labeledDescriptors.length > 0
+    labeledDescriptors.length >
+    0
   ) {
 
     faceMatcher =
       new faceapi.FaceMatcher(
+
         labeledDescriptors,
+
         MATCH_THRESHOLD
+
       );
+
+
+    console.log(
+      'FACE MATCHER SIAP:',
+      labeledDescriptors.length
+    );
 
   } else {
 
     faceMatcher =
       null;
+
+
+    console.log(
+      'BELUM ADA DESCRIPTOR'
+    );
 
   }
 
@@ -796,83 +965,128 @@ async function detectFace() {
   }
 
 
-  detecting = true;
+  detecting =
+    true;
 
 
   try {
 
     const detection =
       await faceapi
+
         .detectSingleFace(
+
           video,
-          new faceapi.TinyFaceDetectorOptions({
-            inputSize: 320,
-            scoreThreshold: 0.5
-          })
+
+          new faceapi
+            .TinyFaceDetectorOptions({
+
+              /*
+               * 160 = lebih cepat.
+               */
+
+              inputSize:
+                160,
+
+              scoreThreshold:
+                0.45
+
+            })
+
         )
+
         .withFaceLandmarks()
+
         .withFaceDescriptor();
 
 
+    /* ===============================================
+       TIDAK ADA WAJAH
+    =============================================== */
+
     if (!detection) {
 
+      latestDetection =
+        null;
+
+
+      drawEmptyBox();
+
+
       setStatus(
+
         registerMode
+
           ? 'Hadapkan wajah ke kamera untuk registrasi.'
+
           : 'Mencari wajah...'
+
       );
 
-      personElement.innerText = '';
 
-      detecting = false;
+      personElement.innerText =
+        '';
 
-      setTimeout(
-        detectFace,
-        150
-      );
+
+      detecting =
+        false;
+
+
+      scheduleDetection();
 
       return;
 
     }
 
 
-    /* ==========================================
-       GAMBAR KOTAK WAJAH
-    ========================================== */
+    /* ===============================================
+       SIMPAN DETEKSI TERAKHIR
+    =============================================== */
+
+    latestDetection =
+      detection;
+
+
+    /* ===============================================
+       GAMBAR KOTAK
+    =============================================== */
 
     drawFaceBox(
       detection
     );
 
 
-    /* ==========================================
-       MODE REGISTRASI
-    ========================================== */
+    /* ===============================================
+       REGISTRASI
+    =============================================== */
 
-    if (registerMode) {
+    if (
+      registerMode
+    ) {
 
       setStatus(
-        'Wajah terdeteksi. Siap direkam.'
+        '✅ Wajah terdeteksi. Klik REKAM WAJAH.'
       );
+
 
       personElement.innerText =
-        'Wajah terdeteksi';
+        'Wajah siap direkam';
 
-      detecting = false;
 
-      setTimeout(
-        detectFace,
-        300
-      );
+      detecting =
+        false;
+
+
+      scheduleDetection();
 
       return;
 
     }
 
 
-    /* ==========================================
-       MODE ABSENSI
-    ========================================== */
+    /* ===============================================
+       ABSENSI
+    =============================================== */
 
     if (!faceMatcher) {
 
@@ -880,30 +1094,52 @@ async function detectFace() {
         'Belum ada wajah siswa yang terdaftar.'
       );
 
-      detecting = false;
+
+      personElement.innerText =
+        '';
+
+
+      detecting =
+        false;
+
 
       setTimeout(
-        detectFace,
+        function() {
+
+          scheduleDetection();
+
+        },
         1000
       );
+
 
       return;
 
     }
 
 
+    /* ===============================================
+       COCOKKAN WAJAH
+    =============================================== */
+
     const bestMatch =
       faceMatcher.findBestMatch(
+
         detection.descriptor
+
       );
 
 
     console.log(
-      'Hasil:',
+      'MATCH:',
       bestMatch.label,
       bestMatch.distance
     );
 
+
+    /* ===============================================
+       TIDAK DIKENALI
+    =============================================== */
 
     if (
       bestMatch.label ===
@@ -911,47 +1147,60 @@ async function detectFace() {
     ) {
 
       setStatus(
-        'Wajah belum dikenali.'
+        '❌ Wajah belum dikenali.'
       );
+
 
       personElement.innerText =
-        '❌ Tidak dikenali';
+        'Tidak dikenali';
 
-      detecting = false;
+
+      detecting =
+        false;
+
 
       setTimeout(
-        detectFace,
-        1000
+        function() {
+
+          scheduleDetection();
+
+        },
+        500
       );
+
 
       return;
 
     }
 
 
-    /* ==========================================
-       SISWA DIKENALI
-    ========================================== */
+    /* ===============================================
+       CARI DATA SISWA
+    =============================================== */
 
     const student =
       students.find(
+
         function(item) {
 
-          return String(item.id) ===
-            String(bestMatch.label);
+          return String(
+            item.id
+          ) ===
+          String(
+            bestMatch.label
+          );
 
         }
+
       );
 
 
     if (!student) {
 
-      detecting = false;
+      detecting =
+        false;
 
-      setTimeout(
-        detectFace,
-        500
-      );
+      scheduleDetection();
 
       return;
 
@@ -961,7 +1210,7 @@ async function detectFace() {
     personElement.innerText =
       student.name ||
       student.nama ||
-      bestMatch.label;
+      student.id;
 
 
     setStatus(
@@ -969,27 +1218,45 @@ async function detectFace() {
     );
 
 
-    /* ==========================================
-       CEGAH ABSENSI BERULANG
-    ========================================== */
+    /* ===============================================
+       CEGAH ABSENSI GANDA
+    =============================================== */
 
     const now =
       Date.now();
 
 
     if (
+
       lastAttendanceId ===
       student.id &&
-      now - lastAttendanceTime <
+
+      (
+        now -
+        lastAttendanceTime
+      ) <
       ATTENDANCE_COOLDOWN
+
     ) {
 
-      detecting = false;
+      detecting =
+        false;
+
+
+      setStatus(
+        'Absensi sudah diproses.'
+      );
+
 
       setTimeout(
-        detectFace,
-        1000
+        function() {
+
+          scheduleDetection();
+
+        },
+        1500
       );
+
 
       return;
 
@@ -999,13 +1266,14 @@ async function detectFace() {
     lastAttendanceId =
       student.id;
 
+
     lastAttendanceTime =
       now;
 
 
-    /* ==========================================
-       KIRIM KE INDEX
-    ========================================== */
+    /* ===============================================
+       KIRIM KE INDEX.HTML
+    =============================================== */
 
     if (
       window.opener &&
@@ -1013,43 +1281,82 @@ async function detectFace() {
     ) {
 
       window.opener.postMessage(
+
         {
-          type: 'MATCH',
 
-          id: student.id,
+          type:
+            'MATCH',
 
-          mode: currentMode
+          id:
+            student.id,
+
+          mode:
+            currentMode
+
         },
+
         '*'
+
       );
 
     }
 
 
-    detecting = false;
+    detecting =
+      false;
 
 
     setTimeout(
-      detectFace,
-      3000
+      function() {
+
+        scheduleDetection();
+
+      },
+      2500
     );
 
 
   } catch (error) {
 
     console.error(
-      'Deteksi:',
+      'DETECTION ERROR:',
       error
     );
 
-    detecting = false;
+
+    detecting =
+      false;
+
 
     setTimeout(
-      detectFace,
-      1000
+      function() {
+
+        scheduleDetection();
+
+      },
+      500
     );
 
   }
+
+}
+
+
+/* =====================================================
+   JADWALKAN DETEKSI BERIKUTNYA
+===================================================== */
+
+function scheduleDetection() {
+
+  if (!running) {
+    return;
+  }
+
+
+  setTimeout(
+    detectFace,
+    DETECTION_INTERVAL
+  );
 
 }
 
@@ -1064,28 +1371,40 @@ function drawFaceBox(
 
   const dims =
     faceapi.matchDimensions(
+
       canvas,
+
       video,
+
       true
+
     );
 
 
   const resized =
     faceapi.resizeResults(
+
       detection,
+
       dims
+
     );
 
 
   const ctx =
-    canvas.getContext('2d');
+    canvas.getContext(
+      '2d'
+    );
 
 
   ctx.clearRect(
+
     0,
     0,
+
     canvas.width,
     canvas.height
+
   );
 
 
@@ -1096,22 +1415,51 @@ function drawFaceBox(
   ctx.strokeStyle =
     '#22c55e';
 
+
   ctx.lineWidth =
     4;
 
 
   ctx.strokeRect(
+
     box.x,
     box.y,
+
     box.width,
     box.height
+
   );
 
 }
 
 
 /* =====================================================
-   CAPTURE WAJAH UNTUK REGISTRASI
+   HAPUS KOTAK
+===================================================== */
+
+function drawEmptyBox() {
+
+  const ctx =
+    canvas.getContext(
+      '2d'
+    );
+
+
+  ctx.clearRect(
+
+    0,
+    0,
+
+    canvas.width,
+    canvas.height
+
+  );
+
+}
+
+
+/* =====================================================
+   REKAM WAJAH
 ===================================================== */
 
 async function captureFace() {
@@ -1123,40 +1471,38 @@ async function captureFace() {
   }
 
 
-  try {
+  /*
+   * Gunakan descriptor yang sudah
+   * tersedia dari deteksi terakhir.
+   */
+
+  if (
+    !latestDetection
+  ) {
 
     setStatus(
-      'Mengambil data wajah...'
+      '❌ Wajah belum terdeteksi.'
     );
 
 
-    const detection =
-      await faceapi
-        .detectSingleFace(
-          video,
-          new faceapi.TinyFaceDetectorOptions({
-            inputSize: 320,
-            scoreThreshold: 0.5
-          })
-        )
-        .withFaceLandmarks()
-        .withFaceDescriptor();
+    return;
+
+  }
 
 
-    if (!detection) {
+  try {
 
-      setStatus(
-        'Wajah belum terdeteksi. Hadapkan wajah ke kamera.'
-      );
-
-      return;
-
-    }
+    setStatus(
+      '⏺ Merekam wajah...'
+    );
 
 
     const descriptor =
       Array.from(
-        detection.descriptor
+
+        latestDetection
+          .descriptor
+
       );
 
 
@@ -1169,19 +1515,15 @@ async function captureFace() {
         'Descriptor wajah tidak valid.'
       );
 
+
       return;
 
     }
 
 
-    setStatus(
-      'Wajah berhasil direkam. Menyimpan...'
-    );
-
-
-    /* ==========================================
-       KIRIM DESCRIPTOR KE INDEX
-    ========================================== */
+    /*
+     * Kirim langsung ke Index.html
+     */
 
     if (
       window.opener &&
@@ -1189,12 +1531,26 @@ async function captureFace() {
     ) {
 
       window.opener.postMessage(
+
         {
-          type: 'REGISTER',
-          descriptor: descriptor
+
+          type:
+            'REGISTER',
+
+          descriptor:
+            descriptor
+
         },
+
         '*'
+
       );
+
+
+      setStatus(
+        '✅ Wajah berhasil direkam. Menyimpan data...'
+      );
+
 
     } else {
 
@@ -1204,9 +1560,13 @@ async function captureFace() {
 
     }
 
+
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      error
+    );
+
 
     setStatus(
       'Gagal merekam wajah: ' +
@@ -1224,7 +1584,16 @@ async function captureFace() {
 
 function stopCamera() {
 
-  running = false;
+  running =
+    false;
+
+
+  detecting =
+    false;
+
+
+  latestDetection =
+    null;
 
 
   if (stream) {
@@ -1232,28 +1601,40 @@ function stopCamera() {
     stream
       .getTracks()
       .forEach(
+
         function(track) {
 
           track.stop();
 
         }
+
       );
 
-    stream = null;
+
+    stream =
+      null;
 
   }
 
 
   if (video) {
 
-    video.srcObject = null;
+    video.srcObject =
+      null;
 
   }
+
+
+  drawEmptyBox();
 
 
   setStatus(
     'Kamera telah dimatikan.'
   );
+
+
+  personElement.innerText =
+    '';
 
 }
 
@@ -1282,50 +1663,54 @@ function showError(
 
 
 /* =====================================================
-   MULAI SISTEM
+   INITIALIZE
 ===================================================== */
 
 async function initialize() {
 
   try {
 
+    /* 1 */
     getParams();
 
 
+    /* 2 */
     await loadModels();
 
 
+    /* 3 */
     await startCamera();
 
 
+    /* 4 */
     loadingElement.style.display =
       'none';
 
 
-    running = true;
+    /* 5 */
+    running =
+      true;
 
 
-    /*
-     * Minta data siswa dari Index
-     */
-
+    /* 6 */
     requestStudents();
 
 
-    /*
-     * Mulai deteksi wajah
-     */
-
+    /* 7 */
     setTimeout(
-      detectFace,
-      1000
+      function() {
+
+        detectFace();
+
+      },
+      500
     );
 
 
   } catch (error) {
 
     console.error(
-      'Initialize:',
+      'INITIALIZE ERROR:',
       error
     );
 
@@ -1335,7 +1720,7 @@ async function initialize() {
 
 
 /* =====================================================
-   SAAT HALAMAN DIBUKA
+   HALAMAN DIBUKA
 ===================================================== */
 
 window.addEventListener(
@@ -1349,7 +1734,7 @@ window.addEventListener(
 
 
 /* =====================================================
-   SAAT WINDOW DITUTUP
+   HALAMAN DITUTUP
 ===================================================== */
 
 window.addEventListener(
