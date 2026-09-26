@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <title>Kamera Absensi Wajah</title>
+
+  <!-- FACE API -->
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #0f172a;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* =========================
+       HEADER
+    ========================= */
+
+    .header {
+      height: 75px;
+      background: #0f766e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 10px;
+      z-index: 10;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 25px;
+    }
+
+    .header p {
+      margin: 4px 0 0;
+      font-size: 14px;
+    }
+
+    /* =========================
+       CAMERA
+    ========================= */
+
+    .camera-area {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #020617;
+      overflow: hidden;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: scaleX(-1);
+    }
+
+    /* =========================
+       STATUS
+    ========================= */
+
+    .status-box {
+      position: absolute;
+      left: 50%;
+      bottom: 25px;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 700px;
+      background: rgba(0, 0, 0, 0.75);
+      border-radius: 15px;
+      padding: 15px;
+      text-align: center;
+      z-index: 5;
+    }
+
+    #status {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #person {
+      margin-top: 8px;
+      font-size: 25px;
+      font-weight: bold;
+      color: #4ade80;
+    }
+
+    /* =========================
+       MODE
+    ========================= */
+
+    .mode {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0,0,0,.75);
+      padding: 12px 18px;
+      border-radius: 10px;
+      z-index: 5;
+      font-weight: bold;
+    }
+
+    /* =========================
+       LOADING
+    ========================= */
+
+    .loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(2,6,23,.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 20;
+    }
+
+    .spinner {
+      width: 55px;
+      height: 55px;
+      border: 5px solid rgba(255,255,255,.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* =========================
+       ERROR
+    ========================= */
+
+    .error {
+      background: #7f1d1d;
+      color: white;
+      padding: 15px;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+      text-align: center;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- HEADER -->
+
+  <div class="header">
+
+    <div>
+
+      <h1>
+        📷 KAMERA ABSENSI WAJAH
+      </h1>
+
+      <p>
+        SD Negeri 1 Juglangan
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- CAMERA -->
+
+  <div class="camera-area">
+
+    <video
+      id="video"
+      autoplay
+      muted
+      playsinline>
+    </video>
+
+    <canvas id="canvas"></canvas>
+
+
+    <!-- MODE -->
+
+    <div class="mode">
+
+      MODE:
+      <span id="modeText">
+        MASUK
+      </span>
+
+    </div>
+
+
+    <!-- STATUS -->
+
+    <div class="status-box">
+
+      <div id="status">
+        Memulai kamera...
+      </div>
+
+      <div id="person"></div>
+
+    </div>
+
+
+    <!-- LOADING -->
+
+    <div
+      id="loading"
+      class="loading">
+
+      <div class="spinner"></div>
+
+      <div id="loadingText">
+        Memuat sistem pengenalan wajah...
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   VARIABEL
+===================================================== */
+
+const video =
+  document.getElementById('video');
+
+const canvas =
+  document.getElementById('canvas');
+
+const statusElement =
+  document.getElementById('status');
+
+const personElement =
+  document.getElementById('person');
+
+const loadingElement =
+  document.getElementById('loading');
+
+const loadingText =
+  document.getElementById('loadingText');
+
+const modeText =
+  document.getElementById('modeText');
+
+
+let stream = null;
+
+let modelsLoaded = false;
+
+let students = [];
+
+let running = false;
+
+let detecting = false;
+
+let registerMode = false;
+
+let currentMode = 'Masuk';
+
+let lastAttendanceId = null;
+
+let lastAttendanceTime = 0;
+
+let faceMatcher = null;
+
+
+/* =====================================================
+   PARAMETER
+===================================================== */
+
+const MATCH_THRESHOLD = 0.48;
+
+const ATTENDANCE_COOLDOWN = 10000;
+
+
+/* =====================================================
+   MODEL FACE API
+===================================================== */
+
+const MODEL_URL =
+  'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+
+
+/* =====================================================
+   STATUS
+===================================================== */
+
+function setStatus(text) {
+
+  statusElement.innerText = text;
+
+}
+
+
+/* =====================================================
+   URL PARAMETER
+===================================================== */
+
+function getParams() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  currentMode =
+    params.get('mode') ||
+    'Masuk';
+
+  registerMode =
+    params.get('register') === '1';
+
+  modeText.innerText =
+    registerMode
+      ? 'REGISTRASI WAJAH'
+      : currentMode.toUpperCase();
+
+}
+
+
+/* =====================================================
+   LOAD MODEL
+===================================================== */
+
+async function loadModels() {
+
+  try {
+
+    loadingText.innerText =
+      'Memuat model deteksi wajah...';
+
+    await faceapi.nets.tinyFaceDetector.loadFromUri(
+      MODEL_URL
+    );
+
+
+    loadingText.innerText =
+      'Memuat model landmark wajah...';
+
+    await faceapi.nets.faceLandmark68Net.loadFromUri(
+      MODEL_URL
+    );
+
+
+    loadingText.innerText =
+      'Memuat model pengenalan wajah...';
+
+    await faceapi.nets.faceRecognitionNet.loadFromUri(
+      MODEL_URL
+    );
+
+
+    modelsLoaded = true;
+
+    console.log(
+      'Semua model berhasil dimuat.'
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    showError(
+      'Model wajah gagal dimuat.<br><br>' +
+      error.message
+    );
+
+    throw error;
+
+  }
+
+}
+
+
+/* =====================================================
+   AKTIFKAN KAMERA
+===================================================== */
+
+async function startCamera() {
+
+  try {
+
+    setStatus(
+      'Meminta izin kamera...'
+    );
+
+
+    stream =
+      await navigator.mediaDevices.getUserMedia({
+
+        video: {
+
+          facingMode: {
+            ideal: 'user'
+          },
+
+          width: {
+            ideal: 1280
+          },
+
+          height: {
+            ideal: 720
+          }
+
+        },
+
+        audio: false
+
+      });
+
+
+    video.srcObject =
+      stream;
+
+
+    await new Promise(
+      function(resolve) {
+
+        video.onloadedmetadata =
+          function() {
+
+            resolve();
+
+          };
+
+      }
+    );
+
+
+    await video.play();
+
+
+    canvas.width =
+      video.videoWidth;
+
+    canvas.height =
+      video.videoHeight;
+
+
+    setStatus(
+      'Kamera aktif. Silakan hadapkan wajah ke kamera.'
+    );
+
+
+    console.log(
+      'Resolusi:',
+      video.videoWidth,
+      video.videoHeight
+    );
+
+
+  } catch (error) {
+
+    console.error(error);
+
+    showError(
+      'Kamera tidak dapat digunakan.<br><br>' +
+      'Pastikan browser memiliki izin kamera.<br><br>' +
+      error.message
+    );
+
+    throw error;
+
+  }
+
+}
+
+
+/* =====================================================
+   MINTA DATA SISWA DARI INDEX
+===================================================== */
+
+function requestStudents() {
+
+  setStatus(
+    'Mengambil data wajah siswa...'
+  );
+
+
+  if (
+    window.opener &&
+    !window.opener.closed
+  ) {
+
+    window.opener.postMessage(
+      {
+        type: 'REQUEST_STUDENTS'
+      },
+      '*'
+    );
+
+  } else {
+
+    showError(
+      'Halaman utama absensi tidak ditemukan.'
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   TERIMA DATA DARI INDEX
+===================================================== */
+
+window.addEventListener(
+  'message',
+  async function(event) {
+
+    const data =
+      event.data || {};
+
+
+    /* -----------------------------------------------
+       DATA SISWA
+    ----------------------------------------------- */
+
+    if (
+      data.type ===
+      'STUDENTS'
+    ) {
+
+      students =
+        Array.isArray(data.students)
+          ? data.students
+          : [];
+
+
+      console.log(
+        'Jumlah siswa:',
+        students.length
+      );
+
+
+      buildFaceMatcher();
+
+
+      if (students.length === 0) {
+
+        setStatus(
+          'Belum ada data wajah siswa yang terdaftar.'
+        );
+
+      } else {
+
+        setStatus(
+          'Sistem siap. Silakan hadapkan wajah ke kamera.'
+        );
+
+      }
+
+    }
+
+
+    /* -----------------------------------------------
+       HASIL ABSENSI
+    ----------------------------------------------- */
+
+    if (
+      data.type ===
+      'RESULT'
+    ) {
+
+      const result =
+        data.result || {};
+
+
+      if (
+        result.success === false
+      ) {
+
+        setStatus(
+          result.message ||
+          'Absensi gagal.'
+        );
+
+      } else {
+
+        setStatus(
+          '✅ ABSENSI BERHASIL'
+        );
+
+
+        personElement.innerText =
+          result.name ||
+          result.nama ||
+          'Berhasil dicatat';
+
+
+        setTimeout(
+          function() {
+
+            personElement.innerText = '';
+
+            setStatus(
+              'Silakan hadapkan wajah berikutnya.'
+            );
+
+          },
+          4000
+        );
+
+      }
+
+    }
+
+
+    /* -----------------------------------------------
+       STOP
+    ----------------------------------------------- */
+
+    if (
+      data.type ===
+      'STOP'
+    ) {
+
+      stopCamera();
+
+    }
+
+
+    /* -----------------------------------------------
+       CAPTURE REGISTRASI
+    ----------------------------------------------- */
+
+    if (
+      data.type ===
+      'CAPTURE'
+    ) {
+
+      await captureFace();
+
+    }
+
+  }
+);
+
+
+/* =====================================================
+   FACE MATCHER
+===================================================== */
+
+function buildFaceMatcher() {
+
+  const labeledDescriptors = [];
+
+
+  students.forEach(
+    function(student) {
+
+      if (
+        !student.descriptor
+      ) {
+        return;
+      }
+
+
+      try {
+
+        let descriptor =
+          student.descriptor;
+
+
+        /*
+         * Descriptor mungkin tersimpan sebagai
+         * JSON string di Google Sheets.
+         */
+
+        if (
+          typeof descriptor ===
+          'string'
+        ) {
+
+          descriptor =
+            JSON.parse(descriptor);
+
+        }
+
+
+        if (
+          Array.isArray(descriptor) &&
+          descriptor.length === 128
+        ) {
+
+          const floatDescriptor =
+            new Float32Array(
+              descriptor
+            );
+
+
+          labeledDescriptors.push(
+
+            new faceapi.LabeledFaceDescriptors(
+              String(student.id),
+              [
+                floatDescriptor
+              ]
+            )
+
+          );
+
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Descriptor tidak valid:',
+          student,
+          error
+        );
+
+      }
+
+    }
+  );
+
+
+  if (
+    labeledDescriptors.length > 0
+  ) {
+
+    faceMatcher =
+      new faceapi.FaceMatcher(
+        labeledDescriptors,
+        MATCH_THRESHOLD
+      );
+
+  } else {
+
+    faceMatcher =
+      null;
+
+  }
+
+}
+
+
+/* =====================================================
+   DETEKSI WAJAH
+===================================================== */
+
+async function detectFace() {
+
+  if (
+    !running ||
+    detecting ||
+    !modelsLoaded
+  ) {
+
+    return;
+
+  }
+
+
+  detecting = true;
+
+
+  try {
+
+    const detection =
+      await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 320,
+            scoreThreshold: 0.5
+          })
+        )
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+
+    if (!detection) {
+
+      setStatus(
+        registerMode
+          ? 'Hadapkan wajah ke kamera untuk registrasi.'
+          : 'Mencari wajah...'
+      );
+
+      personElement.innerText = '';
+
+      detecting = false;
+
+      setTimeout(
+        detectFace,
+        150
+      );
+
+      return;
+
+    }
+
+
+    /* ==========================================
+       GAMBAR KOTAK WAJAH
+    ========================================== */
+
+    drawFaceBox(
+      detection
+    );
+
+
+    /* ==========================================
+       MODE REGISTRASI
+    ========================================== */
+
+    if (registerMode) {
+
+      setStatus(
+        'Wajah terdeteksi. Siap direkam.'
+      );
+
+      personElement.innerText =
+        'Wajah terdeteksi';
+
+      detecting = false;
+
+      setTimeout(
+        detectFace,
+        300
+      );
+
+      return;
+
+    }
+
+
+    /* ==========================================
+       MODE ABSENSI
+    ========================================== */
+
+    if (!faceMatcher) {
+
+      setStatus(
+        'Belum ada wajah siswa yang terdaftar.'
+      );
+
+      detecting = false;
+
+      setTimeout(
+        detectFace,
+        1000
+      );
+
+      return;
+
+    }
+
+
+    const bestMatch =
+      faceMatcher.findBestMatch(
+        detection.descriptor
+      );
+
+
+    console.log(
+      'Hasil:',
+      bestMatch.label,
+      bestMatch.distance
+    );
+
+
+    if (
+      bestMatch.label ===
+      'unknown'
+    ) {
+
+      setStatus(
+        'Wajah belum dikenali.'
+      );
+
+      personElement.innerText =
+        '❌ Tidak dikenali';
+
+      detecting = false;
+
+      setTimeout(
+        detectFace,
+        1000
+      );
+
+      return;
+
+    }
+
+
+    /* ==========================================
+       SISWA DIKENALI
+    ========================================== */
+
+    const student =
+      students.find(
+        function(item) {
+
+          return String(item.id) ===
+            String(bestMatch.label);
+
+        }
+      );
+
+
+    if (!student) {
+
+      detecting = false;
+
+      setTimeout(
+        detectFace,
+        500
+      );
+
+      return;
+
+    }
+
+
+    personElement.innerText =
+      student.name ||
+      student.nama ||
+      bestMatch.label;
+
+
+    setStatus(
+      'Wajah dikenali. Menyimpan absensi...'
+    );
+
+
+    /* ==========================================
+       CEGAH ABSENSI BERULANG
+    ========================================== */
+
+    const now =
+      Date.now();
+
+
+    if (
+      lastAttendanceId ===
+      student.id &&
+      now - lastAttendanceTime <
+      ATTENDANCE_COOLDOWN
+    ) {
+
+      detecting = false;
+
+      setTimeout(
+        detectFace,
+        1000
+      );
+
+      return;
+
+    }
+
+
+    lastAttendanceId =
+      student.id;
+
+    lastAttendanceTime =
+      now;
+
+
+    /* ==========================================
+       KIRIM KE INDEX
+    ========================================== */
+
+    if (
+      window.opener &&
+      !window.opener.closed
+    ) {
+
+      window.opener.postMessage(
+        {
+          type: 'MATCH',
+
+          id: student.id,
+
+          mode: currentMode
+        },
+        '*'
+      );
+
+    }
+
+
+    detecting = false;
+
+
+    setTimeout(
+      detectFace,
+      3000
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'Deteksi:',
+      error
+    );
+
+    detecting = false;
+
+    setTimeout(
+      detectFace,
+      1000
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   GAMBAR KOTAK WAJAH
+===================================================== */
+
+function drawFaceBox(
+  detection
+) {
+
+  const dims =
+    faceapi.matchDimensions(
+      canvas,
+      video,
+      true
+    );
+
+
+  const resized =
+    faceapi.resizeResults(
+      detection,
+      dims
+    );
+
+
+  const ctx =
+    canvas.getContext('2d');
+
+
+  ctx.clearRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+
+
+  const box =
+    resized.detection.box;
+
+
+  ctx.strokeStyle =
+    '#22c55e';
+
+  ctx.lineWidth =
+    4;
+
+
+  ctx.strokeRect(
+    box.x,
+    box.y,
+    box.width,
+    box.height
+  );
+
+}
+
+
+/* =====================================================
+   CAPTURE WAJAH UNTUK REGISTRASI
+===================================================== */
+
+async function captureFace() {
+
+  if (!registerMode) {
+
+    return;
+
+  }
+
+
+  try {
+
+    setStatus(
+      'Mengambil data wajah...'
+    );
+
+
+    const detection =
+      await faceapi
+        .detectSingleFace(
+          video,
+          new faceapi.TinyFaceDetectorOptions({
+            inputSize: 320,
+            scoreThreshold: 0.5
+          })
+        )
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+
+    if (!detection) {
+
+      setStatus(
+        'Wajah belum terdeteksi. Hadapkan wajah ke kamera.'
+      );
+
+      return;
+
+    }
+
+
+    const descriptor =
+      Array.from(
+        detection.descriptor
+      );
+
+
+    if (
+      descriptor.length !==
+      128
+    ) {
+
+      setStatus(
+        'Descriptor wajah tidak valid.'
+      );
+
+      return;
+
+    }
+
+
+    setStatus(
+      'Wajah berhasil direkam. Menyimpan...'
+    );
+
+
+    /* ==========================================
+       KIRIM DESCRIPTOR KE INDEX
+    ========================================== */
+
+    if (
+      window.opener &&
+      !window.opener.closed
+    ) {
+
+      window.opener.postMessage(
+        {
+          type: 'REGISTER',
+          descriptor: descriptor
+        },
+        '*'
+      );
+
+    } else {
+
+      setStatus(
+        'Halaman utama tidak ditemukan.'
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    setStatus(
+      'Gagal merekam wajah: ' +
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   STOP CAMERA
+===================================================== */
+
+function stopCamera() {
+
+  running = false;
+
+
+  if (stream) {
+
+    stream
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+    stream = null;
+
+  }
+
+
+  if (video) {
+
+    video.srcObject = null;
+
+  }
+
+
+  setStatus(
+    'Kamera telah dimatikan.'
+  );
+
+}
+
+
+/* =====================================================
+   ERROR
+===================================================== */
+
+function showError(
+  message
+) {
+
+  loadingElement.innerHTML =
+
+    '<div class="error">' +
+
+      '<b>⚠️ TERJADI KESALAHAN</b>' +
+
+      '<br><br>' +
+
+      message +
+
+    '</div>';
+
+}
+
+
+/* =====================================================
+   MULAI SISTEM
+===================================================== */
+
+async function initialize() {
+
+  try {
+
+    getParams();
+
+
+    await loadModels();
+
+
+    await startCamera();
+
+
+    loadingElement.style.display =
+      'none';
+
+
+    running = true;
+
+
+    /*
+     * Minta data siswa dari Index
+     */
+
+    requestStudents();
+
+
+    /*
+     * Mulai deteksi wajah
+     */
+
+    setTimeout(
+      detectFace,
+      1000
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'Initialize:',
+      error
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   SAAT HALAMAN DIBUKA
+===================================================== */
+
+window.addEventListener(
+  'load',
+  function() {
+
+    initialize();
+
+  }
+);
+
+
+/* =====================================================
+   SAAT WINDOW DITUTUP
+===================================================== */
+
+window.addEventListener(
+  'beforeunload',
+  function() {
+
+    stopCamera();
+
+  }
+);
+
+</script>
+
+</body>
+</html>
